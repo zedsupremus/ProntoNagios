@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# count probatch to detech when it gets to high
+#
+# Date: 2015-03-19
+# Author: Anton Panetta - Climate Technologies
+# And: Damon Ledwidge - Climate Technologies
+#
+# The probatch check is done with the following line
+# prowho -l | tail -n +2 | wc -l
+set -e
+set -u
+
+PROPATH=/psd_apps/live/cus:/psd_apps/live/bms:/run/live/pronto/bin:/run/live/pronto/lbin
+PATH=/run/live/pronto/bin:/usr/local/bin:/bin:/usr/bin:/pro/informix/bin:/run/live/pronto/lbin
+PRONTO=/run/live/pronto
+
+
+#Set variables
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+# defaults
+warn_value=100
+crit_value=125
+
+usage() {
+echo "prowhowatch -w warning -c critical"
+echo
+echo 'Warning is the warning marker, critical is the critical marker'
+echo 'Returns value as performance data'
+echo 'Warning and critical are whole numbers'
+}
+
+while getopts “h:w:c:” OPTION ; do
+case $OPTION in
+ h)
+usage
+exit -1
+;;
+w)
+warn_value="$OPTARG"
+;;
+c)
+crit_value="$OPTARG"
+;;
+?)
+usage
+exit -1
+;;
+esac
+done
+
+# Get our probatch value
+prowhovalue="`prowho -s | tail -n +2 | wc -l`"
+
+case $prowhovalue in 
+[0-$warn_value]*)
+echo "OK: probatch is $prowhovalue | prolog=$prowhovalue;$warn_value;$crit_value;0"
+exit 0
+;;
+[$warn_value-$crit_value]*)
+echo "WARNING: probatch greater than $prowhovalue | prolog=$prowhovalue;$warn_value;$crit_value;0"
+exit 1
+;;
+*)
+echo "CRITICAL: probatch greater than $prowhovalue | prolog=$prowhovalue;$warn_value;$crit_value;0"
+exit 2
+;;
+esac
