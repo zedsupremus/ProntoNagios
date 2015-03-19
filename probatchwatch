@@ -15,7 +15,6 @@ PROPATH=/psd_apps/live/cus:/psd_apps/live/bms:/run/live/pronto/bin:/run/live/pro
 PATH=/run/live/pronto/bin:/usr/local/bin:/bin:/usr/bin:/pro/informix/bin:/run/live/pronto/lbin
 PRONTO=/run/live/pronto
 
-
 #Set variables
 STATE_OK=0
 STATE_WARNING=1
@@ -55,17 +54,10 @@ done
 # Get our probatch value
 probatchvalue="`probatch -l | tail -n +2 | wc -l`"
 
-case $probatchvalue in 
-[0-$warn_value]*)
-echo "OK: probatch is $probatchvalue | prolog=$probatchvalue;$warn_value;$crit_value;0"
-exit 0
-;;
-[$warn_value-$crit_value]*)
-echo "WARNING: probatch greater than $probatchvalue | prolog=$probatchvalue;$warn_value;$crit_value;0"
-exit 1
-;;
-*)
-echo "CRITICAL: probatch greater than $probatchvalue | prolog=$probatchvalue;$warn_value;$crit_value;0"
-exit 2
-;;
-esac
+exit_code=$STATE_OK
+exit_msg="OK: probatch is $probatchvalue"
+[[ $probatchvalue -ge $warn_value ]] && { exit_msg="WARNING: probatch value ($probatchvalue) is greater than $warn_value"; exit_code=$STATE_WARNING; }
+[[ $probatchvalue -ge $crit_value ]] && { exit_msg="CRITICAL: probatch value ($probatchvalue) is greater than $crit_value"; exit_code=$STATE_CRITICAL; }
+
+echo "$exit_msg | probatch=$probatchvalue;$warn_value;$crit_value;0"
+exit $exit_code
